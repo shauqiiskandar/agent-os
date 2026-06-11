@@ -1,0 +1,19 @@
+{
+  "name": "command-center",
+  "version": "0.1.0",
+  "description": "MCP hub exposing D:\\ai-sandbox\\ projects as callable tools.",
+  "type": "module",
+  "private": true,
+  "main": "server/index.mjs",
+  "scripts": {
+    "mcp": "node server/index.mjs",
+    "http": "node server/http.mjs",
+    "dev": "node dev.mjs",
+    "start": "node server/index.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.102.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "express": "^5.2.1"
+  }
+}

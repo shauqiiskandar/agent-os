@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+.pnp.*
+
+# Next.js
+.next/
+out/
+
+# Build output
+dist/
+build/
+
+# Runtime cache
+cache/
+
+# Dashboard persistent storage
+dashboard/pending.txt
+
+# Scratch files
+moneymaker.txt
+tasks.txt
+
+# Project memory (brain)
+.ai/memory/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Debug
+npm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+
+# Vercel
+.vercel
