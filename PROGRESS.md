@@ -139,8 +139,28 @@
 - `dashboard/components/project-progress.tsx` — `key={proj.name}` → `key={`${proj.path}::${proj.name}`}`. Defense in depth even though the API now dedupes.
 
 **Verified:**
-- `/api/projects` returns 9 projects, no duplicates by name or by composite key
+- `/api/projects` returns 9 unique projects, no duplicates by name or by composite key
 - `next build` clean
+
+### 2026-06-13 (session 15) — Tools/Projects/Pending/Settings scroll fix
+
+**Bug:** Tools page (and others) wouldn't scroll after the chat-persistence keep-alive refactor. The page itself was unscrollable because content overflowed `<main>` which was set to `overflow-hidden` so panels could keep-alive via flex siblings.
+
+**Root cause:** Session 12 changed `<main>` from `{nav === "x" && <Panel />}` (conditional render) to `<main class="flex-1 flex flex-col overflow-hidden">{siblings gated by 'hidden'}</main>` so panels wouldn't unmount on tab switch. The sibling wrappers got `flex-1 min-h-0` so they flex-fill the column. But:
+- The wrappers themselves don't scroll (`overflow-hidden`)
+- ChatPanel happened to work because it has internal `<div class="flex h-full flex-col">` with its own `overflow-y-auto` scroll areas (messages list, header sticky)
+- The 4 other panels (`ToolRunner`, `PendingTasks`, `ProjectProgress`, `Settings`) were authored as flat `<div class="animate-fade-in">` — they relied on `<main>` for scrolling, but `<main>` no longer scrolls after the refactor
+- With only 5–7 tools, overflow wasn't visible; the bug only became apparent at 8 tools when tools page grew taller than the viewport
+
+**Fix:** Each non-chat panel root now owns its own scroll, matching chat-panel's pattern (`flex h-full flex-col overflow-y-auto animate-fade-in`):
+- `dashboard/components/tool-runner.tsx` — added `flex h-full flex-col overflow-y-auto` to root
+- `dashboard/components/pending-tasks.tsx` — same
+- `dashboard/components/project-progress.tsx` — same
+- `dashboard/components/settings.tsx` — same
+
+`app/page.tsx` keep-alive `<main class="flex-1 flex flex-col overflow-hidden">` is **unchanged** — that's correct. Each panel now matches the `ChatPanel` flex-h-full-overflow pattern.
+
+**Verified:** Build clean, SSR HTML confirms all 5 panels mount with the correct wrapper structure.
 
 ### 2026-06-13 (session 11) — Puter removed, dashboard chat migrated to NVIDIA direct
 

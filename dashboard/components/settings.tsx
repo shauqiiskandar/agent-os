@@ -8,7 +8,7 @@ interface SettingsProps {
 
 export function Settings({ serverStatus }: SettingsProps) {
   return (
-    <div className="animate-fade-in">
+    <div className="flex h-full flex-col overflow-y-auto animate-fade-in">
       <div className="mb-6">
         <h2 className="font-sans text-lg font-semibold text-text">Settings</h2>
         <p className="mt-1 text-sm text-text-dim">
