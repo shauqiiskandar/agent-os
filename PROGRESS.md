@@ -162,6 +162,15 @@
 
 **Verified:** Build clean, SSR HTML confirms all 5 panels mount with the correct wrapper structure.
 
+### 2026-06-13 (session 16) — Drop legacy `_web_archived/`
+
+Cleaned up the v0.3 Next.js Mission-Control UI that had been renamed (not deleted) in `d15bec1` (session 11–14 commit). 
+
+- 16 source files staged via `git rm -r _web_archived/` — folder entirely removed from git index
+- Local folder also deleted (444 MB of ignored `node_modules/`, `.next/`, `*.tsbuildinfo` garbage freed)
+- Recoverable from git history at any point: `git checkout 58ad0c9 -- web/` revives the original `web/` folder
+- No refs to `_web_archived/` existed in active code (verified across repo); PROGRESS.md narrative entries from v0.3 stay since they're historical context
+
 ### 2026-06-13 (session 11) — Puter removed, dashboard chat migrated to NVIDIA direct
 
 **Big architecture change:** Puter.js was removed from the dashboard. Decisions:
