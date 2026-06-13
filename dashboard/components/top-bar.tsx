@@ -39,10 +39,10 @@ export function TopBar({ serverStatus, statusLoading }: TopBarProps) {
           <span
             className={`relative inline-flex h-2 w-2 rounded-full ${
               statusLoading
-                ? "bg-amber"
-                : isAlive
-                ? "bg-accent"
-                : "bg-red"
+              ? "bg-amber"
+              : isAlive
+              ? "bg-accent"
+              : "bg-red"
             }`}
           />
         </div>
@@ -51,13 +51,16 @@ export function TopBar({ serverStatus, statusLoading }: TopBarProps) {
         </span>
       </div>
 
-      <div className="ml-auto flex items-center gap-4">
+      <div className="ml-auto flex items-center gap-3">
         {serverStatus && (
           <span className="font-mono text-[10px] text-text-faint">
-            v{serverStatus.mode === "http" ? "0.3.0" : "0.1.0"} &middot;{" "}
+            v{serverStatus.mode === "http" ? "0.5.0" : "0.1.0"} &middot;{" "}
             {serverStatus.toolCount} tools
           </span>
         )}
+
+        <div className="h-4 w-px bg-border" />
+
         <span className="font-mono text-[10px] text-text-faint tabular-nums">{time}</span>
       </div>
     </header>

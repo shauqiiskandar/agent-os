@@ -63,32 +63,42 @@ export const TOOLS: ToolDefinition[] = [
   },
   {
     name: "render_video",
-    description: "Render a Remotion composition to MP4 video.",
+    description: "Render a Remotion composition to MP4 (or transparent WebM with --transparent).",
     icon: "film",
     inputSchema: {
       compositionId: {
         type: "select",
         label: "Composition",
-        options: ["StickmanFight"],
-        defaultValue: "StickmanFight",
+        options: ["TitleCard", "InfoCard", "LowerThird", "OutroBumper", "BulletList", "ScriptVideo"],
+        defaultValue: "TitleCard",
       },
       outputPath: {
         type: "text",
         label: "Output Path (optional)",
-        placeholder: "Default: cache/videos/<composition>.mp4",
+        placeholder: "Default: cache/videos/<composition>.<ext>",
+      },
+      transparent: {
+        type: "toggle",
+        label: "Transparent (WebM alpha)",
+        defaultValue: false,
       },
     },
   },
   {
-    name: "ask",
-    description: "Natural language task — routed to a sub-agent with tool access.",
-    icon: "brain",
+    name: "compose_from_script",
+    description: "Render a full video from a Markdown production script (blocks of [HH:MM:SS → HH:MM:SS] kinds).",
+    icon: "film",
     inputSchema: {
-      task: {
-        type: "textarea",
-        label: "Task",
-        placeholder: "e.g. Analyze the CSV at D:\\data\\costs.csv and summarize findings",
+      scriptPath: {
+        type: "text",
+        label: "Production Script (Markdown)",
+        placeholder: "D:\\ai-sandbox\\vid\\remotion\\samples\\weapons-101-ep4.md",
         required: true,
+      },
+      outputPath: {
+        type: "text",
+        label: "Output MP4 Path (optional)",
+        placeholder: "Default: cache/videos/<script-basename>.mp4",
       },
     },
   },

@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { analyzeCsvTool, handleAnalyzeCsv } from "./analyze_csv.mjs";
 import { convertDocumentTool, handleConvertDocument } from "./convert_document.mjs";
 import { renderVideoTool, handleRenderVideo } from "./render_video.mjs";
+import { composeFromScriptTool, handleComposeFromScript } from "./compose_from_script.mjs";
 import { downloadYoutubeSubtitlesTool, handleDownloadYoutubeSubtitles } from "./download_youtube_subtitles.mjs";
 import { pingTool, handlePing } from "./ping.mjs";
 
@@ -16,13 +17,10 @@ const LEAF_TOOLS = [
   { def: analyzeCsvTool, handler: handleAnalyzeCsv },
   { def: convertDocumentTool, handler: handleConvertDocument },
   { def: renderVideoTool, handler: handleRenderVideo },
+  { def: composeFromScriptTool, handler: handleComposeFromScript },
   { def: downloadYoutubeSubtitlesTool, handler: handleDownloadYoutubeSubtitles },
   { def: pingTool, handler: handlePing },
 ];
-
-const ENV_HINT =
-  "Set ANTHROPIC_API_KEY (and optionally ANTHROPIC_BASE_URL, ANTHROPIC_MODEL) " +
-  "in opencode.json under mcp.command_center.environment, then restart opencode.";
 
 async function loadSubAgents() {
   const raw = await readFile(SUB_AGENTS_PATH, "utf8");
@@ -44,9 +42,12 @@ function buildLlmTools(allowedTools) {
   return LEAF_TOOLS.filter(
     ({ def }) => unfiltered || allowed.has(def.name)
   ).map(({ def }) => ({
-    name: def.name,
-    description: def.description,
-    input_schema: def.inputSchema,
+    type: "function",
+    function: {
+      name: def.name,
+      description: def.description,
+      parameters: def.inputSchema,
+    },
   }));
 }
 
@@ -146,13 +147,52 @@ export async function handleAsk(args, hooks = {}) {
     );
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return failResponse(emit, `ANTHROPIC_API_KEY is not set. ${ENV_HINT}`);
+  let key = process.env.ANTHROPIC_API_KEY;
+  let baseURL = process.env.ANTHROPIC_BASE_URL;
+
+  // Fallback: read from opencode.json if env vars are empty
+  if (!key || !baseURL) {
+    try {
+      const os = await import("node:os");
+      const path = await import("node:path");
+      const fs = await import("node:fs/promises");
+      const home = os.homedir();
+      const opencodePaths = [
+        path.join(home, ".config", "opencode", "opencode.json"),
+        path.join(home, ".opencode", "opencode.json"),
+      ];
+      let found = false;
+      for (const p of opencodePaths) {
+        try {
+          await fs.access(p);
+          const raw = await fs.readFile(p, "utf8");
+          const cleaned = raw.charCodeAt(0) === 0xFEFF ? raw.slice(1) : raw;
+          const cfg = JSON.parse(cleaned);
+          const env = cfg?.mcp?.command_center?.environment || cfg?.mcp?.command_center?.env || {};
+          if (env.ANTHROPIC_API_KEY) { key = env.ANTHROPIC_API_KEY; found = true; }
+          if (env.ANTHROPIC_BASE_URL) { baseURL = env.ANTHROPIC_BASE_URL; found = true; }
+          if (found) break;
+        } catch (e) {
+          emit({ type: "debug", stage: "opencode_fallback", path: p, error: e?.message || String(e) });
+        }
+      }
+      if (!found) {
+        emit({ type: "debug", stage: "opencode_fallback", message: "no opencode.json found or parsed", keyEmpty: !key, baseUrlEmpty: !baseURL, home });
+      }
+    } catch (e) {
+      emit({ type: "debug", stage: "opencode_fallback", message: "outer catch: " + (e?.message || String(e)) });
+    }
   }
 
-  const baseURL = process.env.ANTHROPIC_BASE_URL || "https://opencode.ai/zen";
-  const client = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
+  if (!key) {
+    const msg = "No API key found: ANTHROPIC_API_KEY env var is empty and opencode.json fallback also failed.";
+    emit({ type: "error", stage: "validate", message: msg });
+    return { content: [{ type: "text", text: msg }], isError: true };
+  }
+
+  baseURL = baseURL || "https://openrouter.ai/api";
+  const client = new OpenAI({
+    apiKey: key,
     baseURL,
   });
 
@@ -170,7 +210,10 @@ export async function handleAsk(args, hooks = {}) {
     maxIterations,
   });
 
-  const messages = [{ role: "user", content: task }];
+  const messages = [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: task },
+  ];
   const log = [];
   let finalText = "";
   let iterations = 0;
@@ -181,15 +224,15 @@ export async function handleAsk(args, hooks = {}) {
 
     let response;
     try {
-      response = await client.messages.create({
+      response = await client.chat.completions.create({
         model,
         max_tokens: 4096,
-        system: systemPrompt,
         tools: llmTools.length ? llmTools : undefined,
         messages,
       });
     } catch (err) {
-      const msg = `LLM call failed (iteration ${iterations}): ${err.message || err}`;
+      const keyPreview = key ? key.slice(0, 15) + "..." : "(not set)";
+      const msg = `LLM call failed (iteration ${iterations}): ${err.message || err} [key=${keyPreview}, url=${baseURL}, model=${model}]`;
       emit({ type: "error", stage: "llm", message: msg, iteration: iterations });
       const errLog = [
         `## Error (agent: ${agentName || "<none>"}, model: ${model}, iterations: ${iterations})`,
@@ -207,56 +250,62 @@ export async function handleAsk(args, hooks = {}) {
       };
     }
 
-    const textParts = [];
-    const toolUses = [];
-    for (const block of response.content || []) {
-      if (block.type === "text") textParts.push(block.text);
-      else if (block.type === "tool_use") toolUses.push(block);
-    }
+    const choice = response.choices[0];
+    const finishReason = choice.finish_reason;
+    const msgContent = choice.message.content || "";
+    const toolCalls = choice.message.tool_calls || [];
 
-    if (textParts.length > 0) {
-      emit({ type: "llm_text", iteration: iterations, text: textParts.join("\n") });
+    if (msgContent) {
+      emit({ type: "llm_text", iteration: iterations, text: msgContent });
     }
 
     log.push({
       iteration: iterations,
-      stop_reason: response.stop_reason,
-      text: textParts.join(" ").slice(0, 500),
-      tool_calls: toolUses.map((t) => ({ name: t.name, input: t.input })),
+      stop_reason: finishReason,
+      text: msgContent.slice(0, 500),
+      tool_calls: toolCalls.map((t) => ({ name: t.function.name, input: t.function.arguments })),
     });
 
-    messages.push({ role: "assistant", content: response.content });
+    // Append assistant message to conversation history
+    const assistantMsg = { role: "assistant", content: msgContent || null };
+    if (toolCalls.length) {
+      assistantMsg.tool_calls = toolCalls.map((tc) => ({
+        id: tc.id,
+        type: tc.type,
+        function: { name: tc.function.name, arguments: tc.function.arguments },
+      }));
+    }
+    messages.push(assistantMsg);
 
-    const finished =
-      toolUses.length === 0 ||
-      response.stop_reason === "end_turn" ||
-      response.stop_reason === "max_tokens";
+    const finished = toolCalls.length === 0 || finishReason === "stop";
 
     if (finished) {
-      finalText = textParts.join("\n");
+      finalText = msgContent;
       break;
     }
 
-    const toolResults = [];
-    for (const tu of toolUses) {
-      emit({ type: "tool_use", iteration: iterations, id: tu.id, name: tu.name, input: tu.input });
-      const result = await callLeafTool(tu.name, tu.input);
+    for (const tc of toolCalls) {
+      const toolName = tc.function.name;
+      let toolInput = {};
+      try {
+        toolInput = JSON.parse(tc.function.arguments);
+      } catch {}
+
+      emit({ type: "tool_use", iteration: iterations, id: tc.id, name: toolName, input: toolInput });
+      const result = await callLeafTool(toolName, toolInput);
+      const resultText = result.content || "";
+
       emit({
         type: "tool_result",
         iteration: iterations,
-        tool_use_id: tu.id,
-        name: tu.name,
+        tool_use_id: tc.id,
+        name: toolName,
         content: result.content,
         is_error: result.isError || undefined,
       });
-      toolResults.push({
-        type: "tool_result",
-        tool_use_id: tu.id,
-        content: result.content,
-        is_error: result.isError || undefined,
-      });
+
+      messages.push({ role: "tool", tool_call_id: tc.id, content: resultText || "Done (no content)" });
     }
-    messages.push({ role: "user", content: toolResults });
   }
 
   if (!finalText) {

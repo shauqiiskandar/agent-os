@@ -1,12 +1,5 @@
 export type ToolStatus = "idle" | "running" | "success" | "error";
 
-export interface ToolDefinition {
-  name: string;
-  description: string;
-  icon: string;
-  inputSchema?: Record<string, ToolInputField>;
-}
-
 export interface ToolInputField {
   type: "text" | "select" | "textarea" | "toggle";
   label: string;
@@ -14,6 +7,13 @@ export interface ToolInputField {
   required?: boolean;
   options?: string[];
   defaultValue?: string | boolean;
+}
+
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  icon: string;
+  inputSchema?: Record<string, ToolInputField>;
 }
 
 export interface ToolCallRequest {
@@ -58,4 +58,24 @@ export interface ProjectInfo {
   notes: string;
 }
 
-export type NavSection = "tools" | "pending" | "projects" | "settings";
+export type NavSection = "tools" | "chat" | "pending" | "projects" | "settings";
+
+export type ChatMessageRole = "user" | "assistant" | "tool" | "system";
+
+export interface ChatMessage {
+  id: string;
+  role: ChatMessageRole;
+  content: string;
+  toolCalls?: ToolCallInfo[];
+  toolCallId?: string;
+  timestamp: number;
+  streaming?: boolean;
+}
+
+export interface ToolCallInfo {
+  id: string;
+  name: string;
+  arguments: string;
+  result?: string;
+  status?: "pending" | "running" | "done" | "error";
+}

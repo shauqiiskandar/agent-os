@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const WEB_DIR = join(__dirname, "web");
+const WEB_DIR = join(__dirname, "dashboard");
 const IS_WIN = process.platform === "win32";
 
 const HTTP_PORT = process.env.CC_HTTP_PORT || "3010";

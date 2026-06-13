@@ -9,54 +9,98 @@ const ENTRY_FILE = "src/index.ts";
 const DEFAULT_OUT_DIR = resolve(__dirname, "..", "cache", "videos");
 const NPX = process.platform === "win32" ? "npx.cmd" : "npx";
 
+const VALID_COMPOSITIONS = ["TitleCard", "InfoCard", "LowerThird", "OutroBumper", "BulletList", "ScriptVideo"];
+
 export const renderVideoTool = {
   name: "render_video",
   description:
-    "Render a Remotion composition to MP4 using the vid/remotion project " +
-    "(D:\\ai-sandbox\\vid\\remotion). " +
-    "Currently exposes the 'StickmanFight' composition (1920x1080, 5s, 30fps). " +
+    "Render a Remotion composition to MP4 (or transparent WebM with --transparent) " +
+    "using the vid/remotion project (D:\\ai-sandbox\\vid\\remotion). " +
+    "Available compositions: TitleCard, InfoCard, LowerThird, OutroBumper, BulletList, ScriptVideo. " +
+    "ScriptVideo renders a full video from a `blocks` array per the ScriptVideo timeline format. " +
     "First render downloads/extracts Chromium if not cached, which can take several minutes; subsequent renders are faster. " +
-    "Returns the absolute path of the output MP4.",
+    "Returns the absolute path of the output file.",
   inputSchema: {
     type: "object",
     properties: {
       compositionId: {
         type: "string",
-        description: "Remotion composition id. Currently 'StickmanFight'.",
-        default: "StickmanFight",
-      },
-      outputPath: {
-        type: "string",
-        description:
-          "Absolute path for the output .mp4 file. If the parent dir doesn't exist, it'll be created. " +
-          "If omitted, defaults to command_center/cache/videos/<compositionId>.mp4.",
+        enum: VALID_COMPOSITIONS,
+        description: "Remotion composition id to render",
+        default: "TitleCard",
       },
       props: {
         type: "object",
         description:
-          "Optional input props for the composition, passed as JSON. The current composition has no props.",
+          "Props for the composition (per-composition schema). For ScriptVideo, pass `{blocks: [{kind, startFrame, durationFrames, payload}, ...]}`.",
+      },
+      outputPath: {
+        type: "string",
+        description:
+          "Absolute path for the output file. If transparent=true, must end in .webm. Otherwise .mp4. " +
+          "If omitted, defaults to command_center/cache/videos/<compositionId><.ext>.",
+      },
+      transparent: {
+        type: "boolean",
+        description:
+          "When true, render with VP8 codec + YUVA420P pixel format so the output has an alpha channel. Useful for compositing. Adds '.webm' to default extension. Default: false (h264 mp4).",
+        default: false,
+      },
+      durationInFrames: {
+        type: "number",
+        description:
+          "Optional override for composition duration in frames. Useful for ScriptVideo when total duration differs from default.",
+      },
+      fps: {
+        type: "number",
+        description: "Optional override of fps (default 30).",
       },
     },
+    required: ["compositionId"],
   },
 };
 
 export async function handleRenderVideo(args) {
-  const compositionId = args.compositionId || "StickmanFight";
-  const props = args.props;
+  const compositionId = String(args.compositionId || "TitleCard");
 
-  const outPath = args.outputPath
-    ? resolve(args.outputPath)
-    : resolve(DEFAULT_OUT_DIR, `${compositionId}.mp4`);
-
-  if (!outPath.toLowerCase().endsWith(".mp4")) {
-    return errorResult(`outputPath must end in .mp4: ${outPath}`);
+  if (!VALID_COMPOSITIONS.includes(compositionId)) {
+    return errorResult(
+      `Unknown compositionId: "${compositionId}". Valid: ${VALID_COMPOSITIONS.join(", ")}.`
+    );
   }
 
-  await mkdir(dirname(outPath), { recursive: true });
+  const transparent = args.transparent === true;
+  const defaultExt = transparent ? ".webm" : ".mp4";
 
-  const argv = ["remotion", "render", ENTRY_FILE, compositionId, outPath];
-  if (props !== undefined) {
-    argv.push(`--props=${JSON.stringify(props)}`);
+  const requestedOut = args.outputPath
+    ? (isAbsolute(args.outputPath) ? args.outputPath : resolve(args.outputPath))
+    : resolve(DEFAULT_OUT_DIR, `${compositionId}${defaultExt}`);
+
+  if (transparent && !requestedOut.toLowerCase().endsWith(".webm")) {
+    return errorResult(`transparent=true requires outputPath to end in .webm: ${requestedOut}`);
+  }
+  if (!transparent && !requestedOut.toLowerCase().endsWith(".mp4")) {
+    return errorResult(`transparent=false requires outputPath to end in .mp4: ${requestedOut}`);
+  }
+
+  await mkdir(dirname(requestedOut), { recursive: true });
+
+  const argv = ["remotion", "render", ENTRY_FILE, compositionId, requestedOut];
+
+  if (args.props !== undefined && args.props !== null && args.props !== "") {
+    // Windows shell mangles inline JSON in command-line arguments. Pass via a temp file.
+    const { writeFile, unlink } = await import("node:fs/promises");
+    const propsFile = resolve(
+      dirname(requestedOut),
+      `.props-${compositionId}-${Date.now()}.json`
+    );
+    await writeFile(propsFile, JSON.stringify(args.props), "utf8");
+    argv.push(`--props=${propsFile}`);
+    process.stderr.write(`[render_video] props temp file: ${propsFile}\n`);
+  }
+
+  if (transparent) {
+    argv.push("--codec=vp8", "--pixel-format=yuva420p");
   }
 
   process.stderr.write(`[render_video] cwd=${PROJECT_DIR} cmd=${NPX} ${argv.join(" ")}\n`);
@@ -80,11 +124,9 @@ export async function handleRenderVideo(args) {
 
   let sizeInfo = "";
   try {
-    const s = await stat(outPath);
+    const s = await stat(requestedOut);
     sizeInfo = ` (${(s.size / 1024 / 1024).toFixed(2)} MB)`;
-  } catch {
-    // ignore
-  }
+  } catch {}
 
   return {
     content: [
@@ -92,9 +134,10 @@ export async function handleRenderVideo(args) {
         type: "text",
         text:
           `composition: ${compositionId}\n` +
-          `output:      ${outPath}${sizeInfo}\n` +
+          `output:      ${requestedOut}${sizeInfo}\n` +
+          `transparent: ${transparent}\n` +
           `entry:       ${PROJECT_DIR}\\${ENTRY_FILE}\n` +
-          (props ? `props:       ${JSON.stringify(props)}\n` : ""),
+          (args.props ? `props:       ${JSON.stringify(args.props)}\n` : ""),
       },
     ],
   };

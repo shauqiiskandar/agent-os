@@ -63,7 +63,7 @@ export function ProjectProgress() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {projects.map((proj) => (
-            <ProjectCard key={proj.name} project={proj} />
+            <ProjectCard key={`${proj.path}::${proj.name}`} project={proj} />
           ))}
         </div>
       )}

@@ -8,20 +8,24 @@ import { pingTool, handlePing } from "../tools/ping.mjs";
 import { analyzeCsvTool, handleAnalyzeCsv } from "../tools/analyze_csv.mjs";
 import { convertDocumentTool, handleConvertDocument } from "../tools/convert_document.mjs";
 import { renderVideoTool, handleRenderVideo } from "../tools/render_video.mjs";
+import { composeFromScriptTool, handleComposeFromScript } from "../tools/compose_from_script.mjs";
 import { downloadYoutubeSubtitlesTool, handleDownloadYoutubeSubtitles } from "../tools/download_youtube_subtitles.mjs";
 import { askTool, handleAsk } from "../tools/ask.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
 
-const TOOLS = [pingTool, analyzeCsvTool, convertDocumentTool, renderVideoTool, downloadYoutubeSubtitlesTool, askTool];
+const hasLlmKey = !!(process.env.LLM_API_KEY || process.env.ANTHROPIC_API_KEY);
+const leafTools = [pingTool, analyzeCsvTool, convertDocumentTool, renderVideoTool, composeFromScriptTool, downloadYoutubeSubtitlesTool];
+const TOOLS = hasLlmKey ? [...leafTools, askTool] : leafTools;
 const HANDLERS = {
   [pingTool.name]: handlePing,
   [analyzeCsvTool.name]: handleAnalyzeCsv,
   [convertDocumentTool.name]: handleConvertDocument,
   [renderVideoTool.name]: handleRenderVideo,
+  [composeFromScriptTool.name]: handleComposeFromScript,
   [downloadYoutubeSubtitlesTool.name]: handleDownloadYoutubeSubtitles,
-  [askTool.name]: handleAsk,
+  ...(hasLlmKey ? { [askTool.name]: handleAsk } : {}),
 };
 
 const PORT = parseInt(process.env.CC_HTTP_PORT || "3010", 10);

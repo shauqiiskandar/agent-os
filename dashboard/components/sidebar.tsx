@@ -1,10 +1,11 @@
 "use client";
 
 import type { NavSection } from "@/lib/types";
-import { Icon } from "./icon";
+import { Icon, type IconName } from "./icon";
 import { cn } from "@/lib/utils";
 
-const NAV_ITEMS: { id: NavSection; label: string; icon: NavSection }[] = [
+const NAV_ITEMS: { id: NavSection; label: string; icon: string }[] = [
+  { id: "chat", label: "Chat", icon: "bot" },
   { id: "tools", label: "Tools", icon: "tools" },
   { id: "pending", label: "Pending Tasks", icon: "pending" },
   { id: "projects", label: "Project Progress", icon: "projects" },
@@ -58,7 +59,7 @@ export function Sidebar({ active, onNavigate, collapsed, onToggleCollapse }: Sid
             )}
             aria-current={active === item.id ? "page" : undefined}
           >
-            <Icon name={item.icon} className="h-4 w-4 shrink-0" />
+            <Icon name={item.icon as IconName} className="h-4 w-4 shrink-0" />
             {!collapsed && <span>{item.label}</span>}
           </button>
         ))}

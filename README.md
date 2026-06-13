@@ -12,6 +12,35 @@ From a single chat, trigger functionality across every project in the sandbox wi
 - "Download this YouTube transcript" → `download_youtube_subtitles`
 - "Format this markdown file" → `format_document`
 
+## How It Works (non-technical)
+
+There are three ways to use Command Center. Pick the one that fits what you're doing.
+
+### Dashboard (web browser)
+
+You open a web page in your browser. You see cards for each tool — analyze_csv, convert_document, render_video, etc. You fill in a form, click Run. The browser sends a request to a server on your machine. That server finds the right script, runs it (might spawn Python, ffmpeg, or other programs), waits for the result, and sends it back to your browser. The browser displays the result on screen.
+
+The browser never runs anything directly. It's just a display. The server does all the work.
+
+### AI client (opencode / Claude Desktop / Cursor)
+
+You type in natural language: "analyze my CSV at D:\data\costs.csv". The AI client asks Command Center what tools exist (auto-discovery via MCP protocol), picks the right one, calls it, and shows you the result. This works through a pipe between the AI client and Command Center — no web browser needed.
+
+### Scripts (curl, PowerShell, Python)
+
+You call `curl localhost:3010/tools/call` with a JSON body describing which tool to run and what arguments. The HTTP API (a separate server on port 3010) receives it, runs the tool, and sends back the result. No browser, no AI client — useful for automation.
+
+**All three paths end up running the same tool scripts. Only the way you trigger them is different.**
+
+## Surfaces
+
+| Surface | Port | Who uses it | How it works |
+|---|---|---|---|
+| **Dashboard** | 3000 | You (in a web browser) | Click cards, fill forms, hit Run — results display on screen |
+| **MCP server** | stdio | AI clients (opencode, Claude Desktop, Cursor) | AI discovers tools automatically, calls them from chat |
+| **HTTP API** | 3010 | Scripts (curl, Python, automation) | Send JSON requests, get JSON responses |
+| **Dev orchestrator** | 3000+3010 | `npm run dev` or double-click `start-dev.bat` | Starts Dashboard and HTTP API together |
+
 ## Architecture
 
 ```
@@ -58,15 +87,6 @@ D:\ai-sandbox\
 | `render_video` | Render a Remotion composition to MP4 | `D:\ai-sandbox\vid\remotion` |
 | `download_youtube_subtitles` | Fetch YouTube transcript, optionally LLM-format | `D:\ai-sandbox\youtube-subtitle-download-plus-format\` (port 3002) |
 | `ask` | Natural-language → tool routing via sub-agent | All tools above |
-
-## Surfaces
-
-| Surface | Port | Entry point | Purpose |
-|---|---|---|---|
-| **MCP server** | stdio | `node server/index.mjs` | For opencode / Claude Desktop / Cursor |
-| **Dashboard** | 3000 | `cd dashboard && npm run dev` | Human web GUI for running tools |
-| **HTTP API** | 3010 | `npm run http` | REST + SSE streaming for programmatic access |
-| **Dev orchestrator** | 3000+3010 | `npm run dev` | Starts both HTTP + Dashboard together |
 
 ## Quick Start
 

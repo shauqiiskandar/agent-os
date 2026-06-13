@@ -17,7 +17,7 @@ async function loadToolHandler(name: string): Promise<Function | null> {
     convert_document: { file: "convert_document.mjs", export: "handleConvertDocument" },
     format_document: { file: "format_document.mjs", export: "handleFormatDocument" },
     render_video: { file: "render_video.mjs", export: "handleRenderVideo" },
-    ask: { file: "ask.mjs", export: "handleAsk" },
+    compose_from_script: { file: "compose_from_script.mjs", export: "handleComposeFromScript" },
     download_youtube_subtitles: { file: "download_youtube_subtitles.mjs", export: "handleDownloadYoutubeSubtitles" },
   };
 

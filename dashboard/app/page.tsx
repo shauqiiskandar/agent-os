@@ -5,12 +5,13 @@ import type { NavSection, ServerStatus } from "@/lib/types";
 import { Sidebar } from "@/components/sidebar";
 import { TopBar } from "@/components/top-bar";
 import { ToolRunner } from "@/components/tool-runner";
+import { ChatPanel } from "@/components/chat-panel";
 import { PendingTasks } from "@/components/pending-tasks";
 import { ProjectProgress } from "@/components/project-progress";
 import { Settings } from "@/components/settings";
 
 export default function HomePage() {
-  const [nav, setNav] = useState<NavSection>("tools");
+  const [nav, setNav] = useState<NavSection>("chat");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [serverStatus, setServerStatus] = useState<ServerStatus | null>(null);
   const [statusLoading, setStatusLoading] = useState(true);
@@ -43,11 +44,12 @@ export default function HomePage() {
           collapsed={sidebarCollapsed}
           onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
-        <main className="flex-1 overflow-y-auto p-6">
-          {nav === "tools" && <ToolRunner />}
-          {nav === "pending" && <PendingTasks />}
-          {nav === "projects" && <ProjectProgress />}
-          {nav === "settings" && <Settings serverStatus={serverStatus} />}
+        <main className="flex-1 flex flex-col overflow-hidden">
+          <div className={nav === "chat" ? "flex-1 min-h-0" : "hidden"}><ChatPanel /></div>
+          <div className={nav === "tools" ? "flex-1 min-h-0" : "hidden"}><ToolRunner /></div>
+          <div className={nav === "pending" ? "flex-1 min-h-0" : "hidden"}><PendingTasks /></div>
+          <div className={nav === "projects" ? "flex-1 min-h-0" : "hidden"}><ProjectProgress /></div>
+          <div className={nav === "settings" ? "flex-1 min-h-0" : "hidden"}><Settings serverStatus={serverStatus} /></div>
         </main>
       </div>
     </div>

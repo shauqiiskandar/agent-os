@@ -47,8 +47,26 @@ export async function GET() {
         !p.status.includes("Not wrappable")
     );
 
+    // Dedupe by path (and fall back to name). REGISTRY.md has duplicate name rows for
+    // some projects; preserve the row with the richer `tool` cell, otherwise first-seen.
+    const seen = new Map<string, any>();
+    for (const p of filtered) {
+      const key = `${p.path}::${p.name}`;
+      const existing = seen.get(key);
+      if (!existing) {
+        seen.set(key, p);
+      } else if (
+        p.toolName &&
+        p.toolName !== "—" &&
+        (!existing.toolName || existing.toolName === "—")
+      ) {
+        seen.set(key, p);
+      }
+    }
+    const deduped = Array.from(seen.values());
+
     // Enrich with progress mentions
-    for (const proj of filtered) {
+    for (const proj of deduped) {
       const mentions = progress
         .split("\n")
         .filter((l) => l.toLowerCase().includes(proj.name.toLowerCase()))
@@ -59,7 +77,7 @@ export async function GET() {
     }
 
     return NextResponse.json({
-      projects: filtered.length ? filtered : getFallbackProjects(),
+      projects: deduped.length ? deduped : getFallbackProjects(),
       agents: agents.slice(0, 2000),
     });
   } catch (err) {

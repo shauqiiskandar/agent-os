@@ -54,9 +54,14 @@ export function ToolCard({ tool }: ToolCardProps) {
       }
     }
 
-    // Auto-enable browser download mode for tools that support it
     if (tool.name === "download_youtube_subtitles") {
       args.downloadToBrowser = true;
+    }
+
+    if (tool.name === "ask") {
+      setStatus("error");
+      setResult("The 'ask' tool is not invokable from the dashboard tool panel — use the Chat tab instead.");
+      return;
     }
 
     try {
@@ -65,19 +70,14 @@ export function ToolCard({ tool }: ToolCardProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: tool.name, arguments: args }),
       });
-
       const data = await res.json();
-
       if (data.isError) {
         setStatus("error");
         setResult(data.content?.[0]?.text ?? "Unknown error");
       } else {
         setStatus("success");
         setResult(data.content?.[0]?.text ?? "Done");
-        // Capture download payload for browser-triggered file saves
-        if (data.download) {
-          setDownload(data.download);
-        }
+        if (data.download) setDownload(data.download);
       }
     } catch (err) {
       setStatus("error");
@@ -87,39 +87,25 @@ export function ToolCard({ tool }: ToolCardProps) {
 
   const handleDownload = useCallback(async () => {
     if (!download) return;
-
     const { filename, data, mimeType } = download;
-
-    // Decode base64 to binary
     const byteCharacters = atob(data);
     const byteArrays: number[] = [];
     for (let i = 0; i < byteCharacters.length; i++) {
       byteArrays.push(byteCharacters.charCodeAt(i));
     }
     const blob = new Blob([new Uint8Array(byteArrays)], { type: mimeType });
-
-    // Try to use the File System Access API for a real Save As dialog
-    // (Chrome/Edge only, but best UX)
     if (typeof window !== "undefined" && "showSaveFilePicker" in window) {
       try {
         const picker = (window as any).showSaveFilePicker as any;
-        const handle = await picker({
-          suggestedName: filename,
-        });
+        const handle = await picker({ suggestedName: filename });
         const writable = await handle.createWritable();
         await writable.write(blob);
         await writable.close();
         return;
       } catch (err: any) {
-        // User cancelled the dialog, or the API isn't really available
-        if (err.name !== "AbortError") {
-          console.error("showSaveFilePicker failed:", err);
-        }
-        // Fall through to anchor download
+        if (err.name !== "AbortError") console.error("showSaveFilePicker failed:", err);
       }
     }
-
-    // Fallback: trigger a browser download via anchor tag
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -142,9 +128,8 @@ export function ToolCard({ tool }: ToolCardProps) {
 
   return (
     <div className="group relative flex flex-col rounded-lg border border-border bg-bg-elev transition-all hover:border-border-bright">
-      {/* Header */}
       <div className="flex items-start gap-3 p-4 pb-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-bg-elev-2 border border-border">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border bg-bg-elev-2">
           <Icon name={tool.icon as IconName} className="h-4 w-4 text-accent" />
         </div>
         <div className="flex-1 min-w-0">
@@ -159,7 +144,6 @@ export function ToolCard({ tool }: ToolCardProps) {
         </div>
       </div>
 
-      {/* Inputs */}
       {hasInputs && (
         <div className="px-4 pb-3 space-y-2.5">
           {Object.entries(tool.inputSchema!).map(([key, field]) => (
@@ -224,7 +208,6 @@ export function ToolCard({ tool }: ToolCardProps) {
         </div>
       )}
 
-      {/* Result */}
       {result && (
         <div className="mx-4 mb-3">
           <button
@@ -242,7 +225,6 @@ export function ToolCard({ tool }: ToolCardProps) {
         </div>
       )}
 
-      {/* Actions */}
       <div className="mt-auto flex items-center gap-2 border-t border-border p-3">
         {isRunning ? (
           <button
@@ -280,7 +262,7 @@ export function ToolCard({ tool }: ToolCardProps) {
         {(status === "success" || status === "error") && (
           <button
             onClick={reset}
-            className="rounded-md px-2 py-1.5 font-mono text22 text-xs text-text-faint hover:text-text hover:bg-bg-elev-2 transition-colors"
+            className="rounded-md px-2 py-1.5 font-mono text-xs text-text-faint hover:text-text hover:bg-bg-elev-2 transition-colors"
           >
             Clear
           </button>
