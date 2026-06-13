@@ -11,7 +11,6 @@
 | vid/remotion | `D:\ai-sandbox\vid\remotion\` | Remotion project | Runnable (`npm run studio` / `npx remotion render`) | `render_video` (planned) |
 | youtube-subtitle-download-plus-format | `D:\ai-sandbox\youtube-subtitle-download-plus-format\` | Express server | Runnable (`npm start`); auto-starts, avoids yt-dlp binary | `download_youtube_subtitles` (wired v0.2) |
 | resume-optimizer | `D:\ai-sandbox\resume-optimizer\` | Next.js app | Runnable (`npm run dev`); needs `OPENAI_API_KEY` | `optimize_resume` (planned) |
-| openui/genui-chat-app | `D:\ai-sandbox\openui\genui-chat-app\` | Next.js 16 app; `POST /api/chat` streams from `gpt-5.2` via `OPENAI_API_KEY` | Runnable (`npm run dev`); candidate for v0.2 (`ask_openui_agent` / `build_app` / `start_dev_server`) | TBD |
 | colab-client | `D:\ai-sandbox\colab-client\` | Python CLI | Runnable; needs `pyyaml`, `requests` | (not yet scoped) |
 | algo-trading-bot | `D:\ai-sandbox\algo-trading-bot\` | Empty repo (just `.git` + a `.sisyphus` plan for an AI influencer, not trading) | Not wrappable | — |
 | trading-bot | `D:\ai-sandbox\trading-bot\` | Empty Python scaffold (`src/{core,backtest,live,skills,utils,data}` all empty; has `project-structure.md` plan + 232K conv dump + 165K JSON) | Not wrappable yet | — |

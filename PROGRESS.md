@@ -184,6 +184,18 @@ Cleaned up the v0.3 Next.js Mission-Control UI that had been renamed (not delete
 
 No code-level changes this session beyond the REGISTRY.md markdown.
 
+### 2026-06-13 (session 18) — Drop OpenUI stock clone
+
+Removed `D:\ai-sandbox\openui\genui-chat-app\` — a stock `openui-cli` bootstrap of the [OpenUI](https://www.openui.com/) "GenUI Chat" example, never customized or run. OpenUI is a generative UI framework (LLM composes custom React UIs in a compact streaming language). After inspection:
+
+- **Cannot improve command_center dashboard:** the dashboard is a pre-determined tabbed control panel, not a generative UI surface. OpenUI would replace our tab layout, tool picker, model selector, and the keep-alive chat we just built — a net loss.
+- **If ever needed:** `npx @openuidev/cli@latest create <dir>` fetches the latest version in 30 seconds. The May 2026 clone is stale.
+
+**Changes:**
+- `openui/genui-chat-app/` row removed from REGISTRY.md (12 → 11 rows)
+- OpenUI wrapping open thread closed in PROGRESS.md
+- Folder deleted (you're handling the locked files manually)
+
 ### 2026-06-13 (session 11) — Puter removed, dashboard chat migrated to NVIDIA direct
 
 **Big architecture change:** Puter.js was removed from the dashboard. Decisions:
@@ -556,7 +568,7 @@ D:\ai-sandbox\command_center\
 - [x] ~~REGISTRY.md duplicate `openui/genui-chat-app` row~~ — **RESOLVED (session 17)**: dedupe-by-path fallback no longer needed (rows merged); `colab-client` row restored which had been accidentally removed during the merge. Commit `148ffac`.
 - [ ] **Add more sub-agents** to `sub_agents.json` once the router proves out. Likely candidates: a `video-script` sub-agent (tuned for render_video / compose_from_script), a `markdown-clean` sub-agent (tuned for convert_document with `aiFormat=true` + format_document), a `data` sub-agent (tuned for analyze_csv).
 - [ ] **v0.4 UI panels** (if wanted): activity log persistence + feed panel, tool registry panel with call stats, quick-invoke form. All deferred from v0.3 by user scope decision.
-- [ ] **Decide openui/genui-chat-app wrapping** — the merged REGISTRY row says TBD. `ask_openui_agent` is the most likely candidate; would need to decide whether to spawn `next dev` and proxy, or just hit OpenAI directly.
+- [x] ~~Decide openui/genui-chat-app wrapping~~ — **RESOLVED (session 18)**: stock May clone, never run, never customized. Generative UI framework by Thesys Inc. — not suitable for command_center's tabbed control-panel dashboard. Re-clone via `npx @openuidev/cli@latest create` if ever needed. Row dropped from REGISTRY; folder deleted from disk.
 - [ ] **Wrap `resume-optimizer`** — REGISTRY says `optimize_resume` (planned). Resume-optimizer is a full Next.js app; wrapping it means spawning `npm run dev` + a tool that posts resumes + reads optimized output.
 - [ ] **`trading-bot` and `algo-trading-bot`** — both are empty/plan-only. If/when they get code, register them in REGISTRY.md and wire them.
 - [ ] **Opencode integration test** — verify opencode itself can see and call all 8 MCP tools (`ping`, `analyze_csv`, `convert_document`, `format_document`, `render_video`, `compose_from_script`, `download_youtube_subtitles`, `ask`). Requires restarting opencode in `D:\ai-sandbox\command_center\`.
