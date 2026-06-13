@@ -171,6 +171,19 @@ Cleaned up the v0.3 Next.js Mission-Control UI that had been renamed (not delete
 - Recoverable from git history at any point: `git checkout 58ad0c9 -- web/` revives the original `web/` folder
 - No refs to `_web_archived/` existed in active code (verified across repo); PROGRESS.md narrative entries from v0.3 stay since they're historical context
 
+### 2026-06-13 (session 17) — REGISTRY dedupe + PROGRESS cleanup
+
+**A: REGISTRY.md duplicates removed.** Two rows for `openui/genui-chat-app` were merged (kept the more-detailed version: Next.js 16, `gpt-5.2`, `OPENAI_API_KEY`). `colab-client` row accidentally removed during merge was restored. Committed `148ffac`. Now 12 unique rows; `/api/projects` composite-key dedupe is no longer compensating for data-level dupes.
+
+**G: Stale threads closed in PROGRESS.md.**
+- ✓ "User pastes real `ANTHROPIC_API_KEY`" — closed (session 11 superseded Anthropic with NVIDIA)
+- ✓ "End-to-end LLM smoke in the web UI" — closed (SSE chat confirmed working in session 11)
+- ✓ "REGISTRY.md duplicate `openui/genui-chat-app` row" — closed (this session, A above)
+- ✎ Refreshed remaining open threads with current tool count (8, not 6), added COLAB wrap target, refined the sub-agents and per-card smoke descriptions.
+- ✎ "Next Session — Pickup Point" rewritten to reflect today's actual backlog (per-card UI smoke + Remotion templates + openui/resume-optimizer wrappings).
+
+No code-level changes this session beyond the REGISTRY.md markdown.
+
 ### 2026-06-13 (session 11) — Puter removed, dashboard chat migrated to NVIDIA direct
 
 **Big architecture change:** Puter.js was removed from the dashboard. Decisions:
@@ -538,23 +551,24 @@ D:\ai-sandbox\command_center\
 
 - [x] ~~Clarify `AGENT_ROUTER__API_KEY`~~ — **RESOLVED (session 3)**: deleted `.env.local`; using opencode zen endpoint via `ANTHROPIC_*` env vars instead.
 - [x] ~~Add download_youtube_subtitles tool~~ — **RESOLVED (session 6)**: tool wired, server auto-starts on port 3002, browser Save As works.
-- [ ] **User pastes real `ANTHROPIC_API_KEY`** into `opencode.json` `mcp.command_center.environment` — placeholder currently in place. Once set, restart opencode in `D:\ai-sandbox\command_center\` and try the `ask` tool end-to-end (via opencode chat OR via the new web UI).
-- [ ] **End-to-end LLM smoke in the web UI** — type a task in the browser, watch the ReAct loop unfold. Verifies the full pipeline (browser → Next.js proxy → command_center HTTP → Anthropic SDK → leaf tool → SSE back).
-- [ ] **Add more sub-agents** to `sub_agents.json` once the router proves out. Likely candidates: a `video-script` sub-agent (tuned for render_video), a `markdown-clean` sub-agent (tuned for convert_document with aiFormat=true), a `data` sub-agent (tuned for analyze_csv).
+- [x] ~~User pastes real `ANTHROPIC_API_KEY`~~ — **RESOLVED (session 11)**: deprecated. Anthropic is no longer the chat provider — dashboard chat migrated to NVIDIA via `/api/chat` SSE proxy. `LLM_API_KEY` / `LLM_BASE_URL` / `LLM_MODEL` in `dashboard/.env.local` is the new contract; `ANTHROPIC_*` is only retained as fallback for the `/api/status` config endpoint.
+- [x] ~~End-to-end LLM smoke in the web UI~~ — **RESOLVED (session 11)**: SSE chat round-trip working on NVIDIA `openai/gpt-oss-120b`. Tool-call smoke confirmed (LLM emits `tool_calls`, `/api/tools/call` dispatches, results stream back).
+- [x] ~~REGISTRY.md duplicate `openui/genui-chat-app` row~~ — **RESOLVED (session 17)**: dedupe-by-path fallback no longer needed (rows merged); `colab-client` row restored which had been accidentally removed during the merge. Commit `148ffac`.
+- [ ] **Add more sub-agents** to `sub_agents.json` once the router proves out. Likely candidates: a `video-script` sub-agent (tuned for render_video / compose_from_script), a `markdown-clean` sub-agent (tuned for convert_document with `aiFormat=true` + format_document), a `data` sub-agent (tuned for analyze_csv).
 - [ ] **v0.4 UI panels** (if wanted): activity log persistence + feed panel, tool registry panel with call stats, quick-invoke form. All deferred from v0.3 by user scope decision.
-- [ ] **Decide openui/genui-chat-app wrapping** for v0.2 — `ask_openui_agent` is the most likely candidate; would need to decide whether to spawn `next dev` and proxy, or just hit OpenAI directly.
-- [ ] **Consider `colab-client` and `resume-optimizer`** — listed in inventory, not yet inspected, not in the user's first-3 pick.
+- [ ] **Decide openui/genui-chat-app wrapping** — the merged REGISTRY row says TBD. `ask_openui_agent` is the most likely candidate; would need to decide whether to spawn `next dev` and proxy, or just hit OpenAI directly.
+- [ ] **Wrap `resume-optimizer`** — REGISTRY says `optimize_resume` (planned). Resume-optimizer is a full Next.js app; wrapping it means spawning `npm run dev` + a tool that posts resumes + reads optimized output.
 - [ ] **`trading-bot` and `algo-trading-bot`** — both are empty/plan-only. If/when they get code, register them in REGISTRY.md and wire them.
-- [ ] **Opencode integration test** — verify opencode itself can see and call all 6 MCP tools (we smoke-tested by spawning the server in isolation). This requires restarting opencode in `D:\ai-sandbox\command_center\`.
-- [ ] **Test each tool card** in the dashboard GUI invokes real tool handlers (not just ping).
+- [ ] **Opencode integration test** — verify opencode itself can see and call all 8 MCP tools (`ping`, `analyze_csv`, `convert_document`, `format_document`, `render_video`, `compose_from_script`, `download_youtube_subtitles`, `ask`). Requires restarting opencode in `D:\ai-sandbox\command_center\`.
+- [ ] **Per-card dashboard GUI smoke** for all 8 tools — exercised ad hoc (ping, render_video), but each card's full `/api/tools/call` dispatch path through the UI not yet verified. compose_from_script demoed end-to-end last session.
 
 ## Next Session — Pickup Point
 
-When you reopen opencode in `D:\ai-sandbox\command_center\`, the agent will auto-load `AGENTS.md`, `REGISTRY.md`, and (now) `PROGRESS.md`. To resume:
+When you reopen opencode in `D:\ai-sandbox\command_center\`, the agent will auto-load `AGENTS.md`, `REGISTRY.md`, and `PROGRESS.md`. To resume:
 
 > "Read PROGRESS.md and continue from the open threads."
 
-First useful step: test each tool card in the dashboard GUI by running them with real inputs. Then verify the LLM integration works end-to-end with `ANTHROPIC_API_KEY` set.
+First useful step: per-card UI smoke (one tool at a time via the GUI's tool runner), then add more Remotion templates (Ken Burns / parallax pan / charts are queued from session 13's planning). Then wrap `openui/genui-chat-app` and `resume-optimizer`.
 
 ## Things NOT to Retry
 
