@@ -574,13 +574,17 @@ D:\ai-sandbox\command_center\
 - [ ] **Opencode integration test** — verify opencode itself can see and call all 8 MCP tools (`ping`, `analyze_csv`, `convert_document`, `format_document`, `render_video`, `compose_from_script`, `download_youtube_subtitles`, `ask`). Requires restarting opencode in `D:\ai-sandbox\command_center\`.
 - [ ] **Per-card dashboard GUI smoke** for all 8 tools — exercised ad hoc (ping, render_video), but each card's full `/api/tools/call` dispatch path through the UI not yet verified. compose_from_script demoed end-to-end last session.
 
+## Deferred: Set up spare laptop as home server (Tailscale)
+
+The user has a spare laptop and wants to host command_center on it 24/7, accessed from their main laptop over the internet. Plan and steps captured in the brain note: `global/learnings/2026-06-13-home-server-tailscale-plan.md` (Tailscale VPN, no port forwarding, free for personal use). User explicitly deferred this to "later." When ready: install Tailscale on both laptops, clone repo on spare, `npm run dev`, access dashboard at `http://100.x.y.z:3000`.
+
 ## Next Session — Pickup Point
 
 When you reopen opencode in `D:\ai-sandbox\command_center\`, the agent will auto-load `AGENTS.md`, `REGISTRY.md`, and `PROGRESS.md`. To resume:
 
 > "Read PROGRESS.md and continue from the open threads."
 
-First useful step: per-card UI smoke (one tool at a time via the GUI's tool runner), then add more Remotion templates (Ken Burns / parallax pan / charts are queued from session 13's planning). Then wrap `openui/genui-chat-app` and `resume-optimizer`.
+First useful step: per-card UI smoke (one tool at a time via the GUI's tool runner), then add more Remotion templates (Ken Burns / parallax pan / charts are queued from session 13's planning). Then wrap `resume-optimizer`. The Tailscale home-server setup (deferred above) is also up for pickup whenever you're ready.
 
 ## Things NOT to Retry
 
