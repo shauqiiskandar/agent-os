@@ -50,13 +50,14 @@ D:\ai-sandbox\
 │   │   ├── index.mjs          MCP server entry (stdio)
 │   │   └── http.mjs           HTTP API + SSE streaming (port 3010)
 │   ├── tools/
-│   │   ├── ping.mjs
-│   │   ├── analyze_csv.mjs
-│   │   ├── convert_document.mjs
-│   │   ├── format_document.mjs
-│   │   ├── render_video.mjs
-│   │   ├── download_youtube_subtitles.mjs
-│   │   └── ask.mjs
+   │   │   ├── ping.mjs
+   │   │   ├── analyze_csv.mjs
+   │   │   ├── compose_from_script.mjs
+   │   │   ├── convert_document.mjs
+   │   │   ├── download_youtube_subtitles.mjs
+   │   │   ├── format_document.mjs
+   │   │   ├── render_video.mjs
+   │   │   └── ask.mjs
 │   ├── dashboard/             Next.js 15 web GUI (port 3000)
 │   │   ├── app/
 │   │   ├── components/
@@ -85,6 +86,7 @@ D:\ai-sandbox\
 | `convert_document` | Convert md/pdf/docx/html/txt (optional LLM formatting) | `D:\ai-sandbox\markdown-formatter\personal\` (port 3001) |
 | `format_document` | AI-format a markdown file in place | `D:\ai-sandbox\markdown-formatter\personal\` (port 3001) |
 | `render_video` | Render a Remotion composition to MP4 | `D:\ai-sandbox\vid\remotion` |
+| `compose_from_script` | Render a full video from a .md production script | `D:\ai-sandbox\vid\remotion` |
 | `download_youtube_subtitles` | Fetch YouTube transcript, optionally LLM-format | `D:\ai-sandbox\youtube-subtitle-download-plus-format\` (port 3002) |
 | `ask` | Natural-language → tool routing via sub-agent | All tools above |
 
@@ -172,9 +174,9 @@ Environment variables (used by `ask` sub-agent):
 
 | Var | Purpose | Default |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | LLM auth | Required for `ask` |
-| `ANTHROPIC_BASE_URL` | LLM endpoint | `https://opencode.ai/zen` |
-| `ANTHROPIC_MODEL` | Default model | Required for `ask` |
+| `LLM_API_KEY` | LLM auth (NVIDIA / NagaAI / OpenRouter / OpenAI) | Required for `ask` + dashboard chat |
+| `LLM_BASE_URL` | LLM endpoint | `https://integrate.api.nvidia.com/v1` |
+| `LLM_MODEL` | Model name | — |
 | `YT_LLM_BASE_URL` | YouTube formatter LLM base URL | `https://openrouter.ai/api/v1` |
 | `YT_LLM_API_KEY` | YouTube formatter LLM key | — |
 | `YT_LLM_MODEL` | YouTube formatter model | `google/gemma-4-31b-it:free` |

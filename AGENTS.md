@@ -5,7 +5,7 @@
 ## Quick Facts
 
 - **Version:** v0.6
-- **7 tools wired:** `ping`, `analyze_csv`, `convert_document`, `format_document`, `render_video`, `download_youtube_subtitles`, `ask`
+- **8 tools wired:** `ping`, `analyze_csv`, `compose_from_script`, `convert_document`, `format_document`, `render_video`, `download_youtube_subtitles`, `ask`
 - **Dashboard chat:** SSE-streamed from local `/api/chat` → user's LLM provider via OpenAI SDK (NVIDIA / NagaAI / OpenRouter / OpenAI direct)
 - **Dashboard:** port 3000 | **HTTP API:** port 3010
 - **Run:** `npm run dev` (starts both) or double-click `start-dev.bat`
