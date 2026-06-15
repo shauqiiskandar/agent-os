@@ -196,6 +196,24 @@ Removed `D:\ai-sandbox\openui\genui-chat-app\` â€” a stock `openui-cli` boo
 - OpenUI wrapping open thread closed in PROGRESS.md
 - Folder deleted (you're handling the locked files manually)
 
+### 2026-06-13 (session 19) -- video-script skill made pipeline-agnostic
+
+Refactored the `video-script` skill (at `~/.agents/skills/video-script/SKILL.md`) to be reusable across any video rendering pipeline, not just command_center's compose_from_script. Removed 4 command_center-specific references:
+
+- Line 7: purpose now says 'produce a complete .md production script file for any video rendering pipeline'
+- Line 364: output path is user-specified or defaults to `<topic-slug>.md` in CWD (was hardcoded to D:\ai-sandbox\command_center\cache\scripts\)
+- Line 366: format described as 'standard production script format' (was 'compose_from_script format')
+- Line 375: post-write prompt mentions 'Remotion, ffmpeg, or any video pipeline' (was just compose_from_script)
+
+The block format itself (timestamps, kinds, voice annotations) was already generic -- no changes needed to the structure.
+
+**Changes:**
+- `~/.agents/skills/video-script/SKILL.md` refactored
+- Brain note saved: `global/decisions/2026-06-13-video-script-pipeline-agnostic.md`
+- Session log updated with session 19 entry
+
+**Decision rationale:** user does not want the skill locked to command_center. A general-purpose video script skill is more valuable -- it produces portable scripts consumable by any rendering pipeline.
+
 ### 2026-06-13 (session 11) â€” Puter removed, dashboard chat migrated to NVIDIA direct
 
 **Big architecture change:** Puter.js was removed from the dashboard. Decisions:
